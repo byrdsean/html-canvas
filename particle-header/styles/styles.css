@@ -9,6 +9,7 @@ body {
   overflow-x: hidden;
   display: flex;
   justify-content: center;
+  margin-top: 50px;
 }
 
 #headerCanvas {
