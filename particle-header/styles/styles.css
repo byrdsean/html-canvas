@@ -1,0 +1,16 @@
+body {
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+  background-color: rgb(102, 0, 255);
+}
+
+#mainHeader {
+  overflow-x: hidden;
+  display: flex;
+  justify-content: center;
+}
+
+#headerCanvas {
+  border: 1px solid white;
+}
