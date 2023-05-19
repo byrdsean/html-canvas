@@ -1,38 +1,50 @@
 import { randomBetweenTwoIntegers } from "./mathUtils.js";
 
+const MAX_SPEED = 2;
+const MAX_RADIUS = 5;
+
 class Particle {
   constructor(ctx) {
     this.ctx = ctx;
 
-    this.radius = 20;
-    this.setXYPos();
+    this.radius = MAX_RADIUS;
+    this.x_position = Math.floor(
+      randomBetweenTwoIntegers(this.radius, this.ctx.width - this.radius)
+    );
+    this.y_position = Math.floor(
+      randomBetweenTwoIntegers(this.radius, this.ctx.height - this.radius)
+    );
 
-    this.x_direction = this.getDirection();
-    this.y_direction = this.getDirection();
+    this.possibleDirections = this.getPossibleDirections();
+    this.x_direction = this.getNewDirection();
+    this.y_direction = this.getNewDirection();
+
+    this.x_speed = Math.floor(randomBetweenTwoIntegers(1, MAX_SPEED));
+    this.y_speed = Math.floor(randomBetweenTwoIntegers(1, MAX_SPEED));
   }
 
-  getDirection() {
-    const directions = [-1, -0.75, -0.5, -0.25, 0.25, 0.5, 0.75, 1];
-    return directions[Math.floor(Math.random() * directions.length)];
+  getXPosition() {
+    return this.x_position;
   }
 
-  setXYPos() {
-    do {
-      this.x_position = Math.floor(Math.random() * this.ctx.width);
-    } while (this.x_position <= 0);
-    do {
-      this.y_position = Math.floor(Math.random() * this.ctx.height);
-    } while (this.y_position <= 0);
+  getYPosition() {
+    return this.y_position;
+  }
 
-    const x_rightBound = this.x_position + this.radius;
-    if (this.ctx.width < x_rightBound) {
-      this.x_position -= x_rightBound - this.ctx.width;
+  getPossibleDirections() {
+    const directions = [];
+    for (let i = -1; i <= 1; i += 0.25) {
+      //Do not insert a 0. That means no movement
+      if (i === 0) continue;
+      directions.push(i);
     }
+    return directions;
+  }
 
-    const y_rightBound = this.y_position + this.radius;
-    if (this.ctx.height < y_rightBound) {
-      this.y_position -= y_rightBound - this.ctx.height;
-    }
+  getNewDirection() {
+    return this.possibleDirections[
+      Math.floor(Math.random() * this.possibleDirections.length)
+    ];
   }
 
   draw() {
@@ -45,16 +57,17 @@ class Particle {
   }
 
   update() {
-    this.x_position += this.x_direction;
-    this.y_position += this.y_direction;
+    this.x_position += this.x_direction * this.x_speed;
+    this.y_position += this.y_direction * this.y_speed;
 
-    const x_leftBound = this.x_position <= this.radius;
-    const x_rightBound = this.ctx.width <= this.x_position + this.radius;
-    if (x_leftBound || x_rightBound) this.x_direction *= -1;
+    this.x_direction *= this.updateDirection(this.x_position, this.ctx.width);
+    this.y_direction *= this.updateDirection(this.y_position, this.ctx.height);
+  }
 
-    const y_leftBound = this.y_position <= this.radius;
-    const y_rightBound = this.ctx.height <= this.y_position + this.radius;
-    if (y_leftBound || y_rightBound) this.y_direction *= -1;
+  updateDirection(position, maxSize) {
+    const minBound = position <= this.radius;
+    const maxBound = maxSize <= position + this.radius;
+    return minBound || maxBound ? -1 : 1;
   }
 }
 
