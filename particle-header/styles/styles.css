@@ -9,9 +9,9 @@ body {
   overflow-x: hidden;
   display: flex;
   justify-content: center;
-  margin-top: 50px;
+  /* margin-top: 50px; */
 }
 
-#headerCanvas {
+/* #headerCanvas {
   border: 1px solid white;
-}
+} */
