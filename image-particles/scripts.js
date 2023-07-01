@@ -3,8 +3,10 @@ const CANVAS_HEIGHT = 700;
 const CANVAS_WIDTH = 700;
 const MAX_PARTICLES = 3000;
 const MAX_SPEED = 10;
-// const MIN_SPEED = 1;
+const MIN_SPEED = 1;
 const RGBA_ARRAY_LENGTH = 4;
+const MAX_BRIGHTNESS = 255;
+const PARTICLE_ALPHA = 0.5;
 
 const canvas = document.getElementById("canvas");
 canvas.height = CANVAS_HEIGHT;
@@ -18,15 +20,16 @@ const loadImage = (imagePath) => {
   return image;
 };
 
-// const image = loadImage('../images/megaman.png');
-const image = loadImage("../images/square.png");
+// const image = loadImage("../images/megaman.png");
+// const image = loadImage("../images/square.png");
+// const image = loadImage("../images/spiderman.jpg");
+const image = loadImage("../images/cyberpunk.jpg");
 
 const drawImage = () => {
   //Draw image and center in canvas
   const x_position = canvas.width / 2 - image.width / 2;
   const y_position = canvas.height / 2 - image.height / 2;
-  // ctx.drawImage(image, x_position, y_position, image.width, image.height)
-  ctx.drawImage(image, 0, 0, image.width, image.height);
+  ctx.drawImage(image, x_position, y_position, image.width, image.height);
 };
 
 class Particle {
@@ -34,8 +37,9 @@ class Particle {
     this.x_position = Math.floor(Math.random() * CANVAS_WIDTH);
     this.y_position = Math.floor(Math.random() * CANVAS_HEIGHT);
     this.color = "white";
-    this.radius = 2;
+    this.radius = 1;
     this.speed = Math.random() * MAX_SPEED;
+    this.alpha = 0;
   }
 
   draw() {
@@ -44,7 +48,7 @@ class Particle {
 
     //Set the color for this individual particle
     ctx.fillStyle = this.color;
-    ctx.globalAlpha = 0.5;
+    ctx.globalAlpha = this.alpha;
 
     //Draw particle
     ctx.beginPath();
@@ -64,22 +68,28 @@ class Particle {
   }
 
   update(imageData) {
-    if (imageData) {
-      //Get the brightness for this position, if any
-      if (
-        imageData[this.x_position] &&
-        imageData[this.x_position][this.y_position]
-      ) {
-      }
+    let velocity = this.speed;
+
+    //Get the brightness for this position, if any
+    const x_coord = Math.floor(this.x_position);
+    const y_coord = Math.floor(this.y_position);
+    if (imageData && imageData[x_coord] && imageData[x_coord][y_coord]) {
+      const brightnessLevel = imageData[x_coord][y_coord] / MAX_BRIGHTNESS;
+      const darknessLevel = 1 - brightnessLevel;
+      //   velocity = Math.ceil((MAX_SPEED - MIN_SPEED) * darknessLevel + MIN_SPEED);
+      velocity = (MAX_SPEED - MIN_SPEED) * darknessLevel + MIN_SPEED;
+      this.alpha = brightnessLevel;
+    } else {
+      this.alpha = 0;
     }
 
-    this.y_position += this.speed;
+    this.y_position += velocity;
     if (this.y_position > CANVAS_HEIGHT) {
       //Set a random x position so the particle don't appear uniform
       this.x_position = Math.floor(Math.random() * CANVAS_WIDTH);
 
       //Set canvas height above viewport so that it can move down fluidly
-      this.y_position = Math.floor(Math.random() * CANVAS_HEIGHT * -1);
+      this.y_position = 0;
     }
   }
 }
@@ -114,55 +124,30 @@ const getImageBrightnessMap = (imageData) => {
 };
 
 image.addEventListener("load", () => {
-  const particles = [];
+  let particles = [];
   for (let i = 0; i < MAX_PARTICLES; i++) {
     const particle = new Particle();
     particles.push(particle);
   }
 
+  //Draw the image in order to get the image and brightness data
   drawImage();
   const imageData = getImageBrightnessMap(
     ctx.getImageData(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT)
   );
-  //   ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+  ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
   const animate = () => {
-    drawImage();
-
     //Clear the canvas, and set the global alpha (opacity)
     //This will give the effect of "trails" on the particles.
-    ctx.globalAlpha = 0.05;
+    //The lower the value, the longer the trail
+    ctx.globalAlpha = 0.01;
     ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
     particles.forEach((particle) => {
       particle.draw();
       particle.update(imageData);
     });
-
-    // drawImage();
-    // particles.forEach((particle) => {
-    //   particle.draw();
-    //   // particle.update();
-
-    //   if (particle.y_position < CANVAS_HEIGHT) {
-    //     //Get the rgba data for the image at the particles coordinates
-    //     //Use that info to update the particle
-    //     const rowLength = CANVAS_HEIGHT * RGBA_ARRAY_LENGTH;
-    //     const imageRow = imageData.data.slice(
-    //       particle.y_position * rowLength,
-    //       particle.y_position * rowLength + rowLength
-    //     );
-    //     const rgbaData = imageRow.slice(
-    //       particle.x_position * RGBA_ARRAY_LENGTH,
-    //       particle.x_position * RGBA_ARRAY_LENGTH + RGBA_ARRAY_LENGTH
-    //     );
-
-    //     // console.log(`rgba(${rgbaData[0]}, ${rgbaData[1]}, ${rgbaData[2]}, ${rgbaData[3]})`)
-
-    //     particle.update(rgbaData);
-    //   } else {
-    //     particle.update();
-    //   }
-    // });
     requestAnimationFrame(animate);
   };
   animate();
