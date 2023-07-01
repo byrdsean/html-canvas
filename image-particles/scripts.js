@@ -4,7 +4,7 @@ const CANVAS_WIDTH = 700;
 const MAX_PARTICLES = 3000;
 const MAX_SPEED = 10;
 // const MIN_SPEED = 1;
-// const RGBA_ARRAY_LENGTH = 4;
+const RGBA_ARRAY_LENGTH = 4;
 
 const canvas = document.getElementById("canvas");
 canvas.height = CANVAS_HEIGHT;
@@ -63,14 +63,55 @@ class Particle {
     ctx.restore();
   }
 
-  update() {
+  update(imageData) {
+    if (imageData) {
+      //Get the brightness for this position, if any
+      if (
+        imageData[this.x_position] &&
+        imageData[this.x_position][this.y_position]
+      ) {
+      }
+    }
+
     this.y_position += this.speed;
     if (this.y_position > CANVAS_HEIGHT) {
+      //Set a random x position so the particle don't appear uniform
       this.x_position = Math.floor(Math.random() * CANVAS_WIDTH);
+
+      //Set canvas height above viewport so that it can move down fluidly
       this.y_position = Math.floor(Math.random() * CANVAS_HEIGHT * -1);
     }
   }
 }
+
+const getImageBrightnessMap = (imageData) => {
+  const brightnessMap = {};
+  if (!imageData) return brightnessMap;
+
+  const rowLength = CANVAS_WIDTH * RGBA_ARRAY_LENGTH;
+  for (let row = 0; row < CANVAS_HEIGHT; row++) {
+    const imageRow = imageData.data.slice(
+      row * rowLength,
+      row * rowLength + rowLength
+    );
+    for (let col = 0; col < CANVAS_WIDTH; col++) {
+      const rgba = imageRow.slice(
+        col * RGBA_ARRAY_LENGTH,
+        col * RGBA_ARRAY_LENGTH + RGBA_ARRAY_LENGTH
+      );
+
+      const brightness = Math.ceil(
+        0.2126 * rgba[0] + 0.7152 * rgba[1] + 0.0722 * rgba[2]
+      );
+      if (0 < brightness) {
+        const brightYMap = {};
+        brightYMap[row] = brightness;
+        brightnessMap[col] = { ...brightnessMap[col], ...brightYMap };
+      }
+    }
+  }
+  return brightnessMap;
+};
 
 image.addEventListener("load", () => {
   const particles = [];
@@ -79,24 +120,23 @@ image.addEventListener("load", () => {
     particles.push(particle);
   }
 
-  //   drawImage();
-  //   const imageData = ctx.getImageData(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+  drawImage();
+  const imageData = getImageBrightnessMap(
+    ctx.getImageData(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT)
+  );
   //   ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
   const animate = () => {
+    drawImage();
+
     //Clear the canvas, and set the global alpha (opacity)
     //This will give the effect of "trails" on the particles.
     ctx.globalAlpha = 0.05;
     ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
     particles.forEach((particle) => {
       particle.draw();
-      particle.update();
+      particle.update(imageData);
     });
-
-    // drawImage();
-    // ctx.globalAlpha = 0.05
-    // ctx.fillStyle = 'rgba(0, 0, 0)';
-    // ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
     // drawImage();
     // particles.forEach((particle) => {
